@@ -1,4 +1,4 @@
-# SimpleRBMQCppWrapper
+# RabbitMQ Cpp Wrapper
 
 A simple wrapper of the  [rabbitmq-c](https://github.com/alanxz/rabbitmq-c) Rabbitmq-c library. Usage is extremely easy.
 
