@@ -4,7 +4,7 @@
 // Author: Le Xuan Tuan Anh
 //
 // Copyright 2022 Le Xuan Tuan Anh
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -24,43 +24,39 @@ using namespace AMQP;
 
 AMQP::Exception::Exception()
 {
-    this->m_message = "unknown exception";
-    this->m_code = -1;
+    _message = "AMQP: unknown exception";
+    _code = -1;
 }
 
 Exception::Exception(const std::string& message, int error_code)
 {
-    this->m_message = message;
+    _message = "AMQP: " + message;
     if (error_code != -1)
-        this->m_message = this->m_message + "\nDetails: " + amqp_error_string2(error_code);
-    this->m_code = error_code;
+    {
+        _message += "\nDetails: ";
+        _message += amqp_error_string2(error_code);
+    }
+    _code = error_code;
 }
 
 AMQP::Exception::Exception(const std::string& message, const amqp_rpc_reply_t& res)
 {
+    _message = "AMQP: " + message;
     std::string msg;
-    Exception::replyToString(res, msg, this->m_code);
-    if (message.empty())
-        this->m_message = std::move(msg);
-    else
-        this->m_message = message + "\nDetails: " + msg;
+    replyToString(res, msg, _code);
+    _message += "\nDetails: ";
+    _message += msg;
 }
 
-int Exception::GetReplyCode() const { return m_code; }
-std::string Exception::GetErrMsg() const
-{
-    std::stringstream msg;
-    msg << m_message << "\nError code: " << m_code;
-    return msg.str();
-}
+int Exception::GetReplyCode() const { return _code; }
 
-const char* AMQP::Exception::what() const throw() { return m_message.c_str(); }
+const char* AMQP::Exception::what() const throw() { return _message.c_str(); }
 
 void AMQP::Exception::replyToString(const amqp_rpc_reply_t& res, std::string& msg, int& code)
 {
     if (res.reply_type == AMQP_RESPONSE_LIBRARY_EXCEPTION)
     {
-        // this->msg = res.library_error ? strerror(res.library_error) : "end-of-stream";
+        // msg = res.library_error ? strerror(res.library_error) : "end-of-stream";
         msg = amqp_error_string2(res.library_error);
         code = res.library_error;
     }

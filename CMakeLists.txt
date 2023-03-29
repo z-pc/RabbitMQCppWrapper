@@ -17,4 +17,4 @@ add_executable(wrapper_ex
      src/Channel.cpp
      src/Exception.h
      src/Exception.cpp)
-target_link_libraries(wrapper_ex PUBLIC rabbitmq-static)
+target_link_libraries(wrapper_ex PUBLIC ${LIBRABBITMQ_LIBS})

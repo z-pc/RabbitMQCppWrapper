@@ -29,7 +29,6 @@ int main(void)
         }
 
         auto channel = cnn->createChannel();
-
         auto exchange = channel->declareExchange("test_declare_exchange", "direct");
 
         // exchange bind

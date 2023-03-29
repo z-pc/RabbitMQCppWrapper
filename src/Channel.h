@@ -4,7 +4,7 @@
 // Author: Le Xuan Tuan Anh
 //
 // Copyright 2022 Le Xuan Tuan Anh
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -22,7 +22,7 @@
 #define AMQP_CPP_CHANNEL_H__
 
 #include "Connection.h"
-#include "rabbitmq-c/amqp.h"
+#include "amqp.h"
 #include <string>
 #include <utility>
 #include <vector>
@@ -151,7 +151,7 @@ public:
 
     Table();
     Table(const Table&);
-    Table(Table&&);
+    Table(Table&&) noexcept;
     ~Table() { empty(); };
 
     void addEntry(const char* key, const char* value);
@@ -184,7 +184,7 @@ public:
     }
 
     Table& operator=(const Table&);
-    Table& operator=(Table&&);
+    Table& operator=(Table&&) noexcept;
 
     void empty();
 
@@ -267,21 +267,21 @@ public:
      */
     void close();
 
-    bool isOpened() { return _isOpened; };
+    bool isOpened() { return _tcpConn.getChannelState(_channelId) == USING; };
+    std::uint16_t getId() { return _channelId; }
 
 protected:
-    Channel(AMQP::TCPConnection&, std::uint16_t channel = 1);
+    Channel(AMQP::TCPConnection&, std::uint16_t id = 1);
 
-    void open(std::uint16_t channel = 1);
+    virtual void open(std::uint16_t id = 1);
     virtual void assertConnection();
     virtual void dumpBasicProps(const AMQP::MessageProps* pProps,
                                 amqp_basic_properties_t& pAmqpProps);
     virtual void initBasicProps(amqp_basic_properties_t& pAmqpProps);
     virtual void updateChannelState(ChannelState state);
 
-    bool _isOpened;
-    AMQP::TCPConnection& _tcpConn;
-    std::uint16_t _channelNum;
+    AMQP::TCPConnection& const _tcpConn;
+    const std::uint16_t _channelId;
 };
 } // namespace AMQP
 

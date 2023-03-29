@@ -4,7 +4,7 @@
 // Author: Le Xuan Tuan Anh
 //
 // Copyright 2022 Le Xuan Tuan Anh
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -21,8 +21,8 @@
 #ifndef AMQP_CPP_CONNECTION_H__
 #define AMQP_CPP_CONNECTION_H__
 
+#include "amqp.h"
 #include "noncopyable.h"
-#include "rabbitmq-c/amqp.h"
 #include <map>
 #include <memory>
 #include <string>
@@ -110,14 +110,14 @@ public:
      * this function will generate the channel number for ready or closed.
      * @param channel: the number of channel
      */
-    virtual std::unique_ptr<Channel> createChannel(std::int32_t channel = 0);
+    virtual std::unique_ptr<Channel> createChannel(std::int32_t id = 0);
 
     /**
      * @brief Get channel state
      * @param channel
      * @return
      */
-    ChannelState getChannelState(std::uint16_t channel);
+    ChannelState getChannelState(std::uint16_t id);
 
     /**
      * @brief Looking for a usable channel, if not found, return 0
@@ -157,15 +157,12 @@ protected:
     std::string _vHost;
     std::string _username;
     std::string _password;
-    std::uint16_t _port;
-
-    amqp_socket_t* _pSocket;
-    amqp_connection_state_t _pConn;
-
+    std::uint16_t _port{0};
+    bool _isLogined{false};
+    bool _isConnected{false};
+    amqp_socket_t* _pSocket{nullptr};
+    amqp_connection_state_t _pConn{nullptr};
     std::map<std::uint16_t, ChannelState> _channelsState;
-
-    bool _isLogined;
-    bool _isConnected;
 };
 
 template <typename... Args>

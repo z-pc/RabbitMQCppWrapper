@@ -4,7 +4,7 @@
 // Author: Le Xuan Tuan Anh
 //
 // Copyright 2022 Le Xuan Tuan Anh
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -27,14 +27,13 @@ std::string AMQP::Channel::basicConsume(const std::string& strQueue, const std::
                                         bool bNoLocal /*= false*/, bool bNoAck /*= false*/,
                                         bool bExclusive /*= false*/, const Table* args)
 {
-
     return basicConsume(amqp_cstring_bytes(strQueue.c_str()), consumerTag, bNoLocal, bNoAck,
                         bExclusive, args);
 }
 
 void AMQP::Channel::basicCancel(const std::string& consumerTag)
 {
-    auto r = amqp_basic_cancel(_tcpConn.connnection(), this->_channelNum,
+    auto r = amqp_basic_cancel(_tcpConn.connnection(), this->_channelId,
                                amqp_cstring_bytes(consumerTag.c_str()));
     if (!r)
     {
@@ -48,10 +47,8 @@ AMQP::Envelope AMQP::Channel::getMessage(const timeval& timeOut)
     Envelope en;
     amqp_connection_state_t conn = _tcpConn.connnection();
     char* pBuffer = nullptr;
-
     amqp_frame_t frame;
     int result = 0;
-
     size_t body_target = 0;
     size_t body_received = 0;
 
@@ -113,7 +110,7 @@ AMQP::Envelope AMQP::Channel::getMessage(const timeval& timeOut)
             {
                 if (pBuffer)
                 {
-                    delete pBuffer;
+                    delete[] pBuffer;
                     pBuffer = nullptr;
                 }
                 throw AMQP::Exception("Get message error: Body received less than target");
@@ -143,7 +140,7 @@ void AMQP::Channel::basicQos(std::uint16_t prefetchCount, std::uint32_t prefetch
     amqp_connection_state_t conn = _tcpConn.connnection();
     /* If there is a limit, set the qos to match */
     if (prefetchCount > 0 && prefetchCount <= AMQP_CONSUME_MAX_PREFETCH_COUNT)
-        if (!amqp_basic_qos(conn, _channelNum, prefetchSize, prefetchCount, global))
+        if (!amqp_basic_qos(conn, _channelId, prefetchSize, prefetchCount, global))
         {
             auto res = amqp_get_rpc_reply(_tcpConn.connnection());
             throw AMQP::Exception("Basic Qos failed", res);
@@ -152,7 +149,7 @@ void AMQP::Channel::basicQos(std::uint16_t prefetchCount, std::uint32_t prefetch
 
 void AMQP::Channel::basicAck(uint64_t m_delivery_tag, bool multiple /*= false*/)
 {
-    int res = amqp_basic_ack(_tcpConn.connnection(), this->_channelNum, m_delivery_tag, multiple);
+    int res = amqp_basic_ack(_tcpConn.connnection(), this->_channelId, m_delivery_tag, multiple);
     if (0 > res)
     {
         auto res = amqp_get_rpc_reply(_tcpConn.connnection());
@@ -170,7 +167,7 @@ void AMQP::Channel::basicPublish(const std::string& strExchange, const std::stri
 
     if (pProps) dumpBasicProps(pProps, amqpProps);
 
-    int res = amqp_basic_publish(conn, _channelNum, amqp_cstring_bytes(strExchange.c_str()),
+    int res = amqp_basic_publish(conn, _channelId, amqp_cstring_bytes(strExchange.c_str()),
                                  amqp_cstring_bytes(strRoutingKey.c_str()), 0, 0, &amqpProps,
                                  (amqp_bytes_t)message);
 
@@ -210,7 +207,7 @@ std::string AMQP::Channel::declareExchange(std::string exchangeName, std::string
     }
 
     amqp_exchange_declare_ok_t* r = amqp_exchange_declare(
-        _tcpConn.connnection(), _channelNum, exchange, amqp_cstring_bytes(type.c_str()), passive,
+        _tcpConn.connnection(), _channelId, exchange, amqp_cstring_bytes(type.c_str()), passive,
         durable, autoDel, internal, table);
 
     if (!r)
@@ -233,7 +230,7 @@ void AMQP::Channel::bindExhange(std::string destination, std::string source, std
     }
 
     amqp_exchange_bind_ok_t* r = amqp_exchange_bind(
-        _tcpConn.connnection(), _channelNum, amqp_cstring_bytes(destination.c_str()),
+        _tcpConn.connnection(), _channelId, amqp_cstring_bytes(destination.c_str()),
         amqp_cstring_bytes(source.c_str()), amqp_cstring_bytes(routingKey.c_str()), table);
 
     if (!r)
@@ -251,7 +248,7 @@ void AMQP::Channel::deleteExchange(std::string exchange, bool ifUnUsed, bool noW
     req.if_unused = ifUnUsed;
     req.nowait = noWait;
 
-    if (!amqp_simple_rpc_decoded(_tcpConn.connnection(), _channelNum, AMQP_EXCHANGE_DELETE_METHOD,
+    if (!amqp_simple_rpc_decoded(_tcpConn.connnection(), _channelId, AMQP_EXCHANGE_DELETE_METHOD,
                                  AMQP_EXCHANGE_DELETE_OK_METHOD, &req))
     {
         auto res = amqp_get_rpc_reply(_tcpConn.connnection());
@@ -277,7 +274,7 @@ void AMQP::Channel::unbindExhange(std::string destination, std::string source,
     req.nowait = 0;
     req.arguments = table;
 
-    if (!amqp_simple_rpc_decoded(_tcpConn.connnection(), _channelNum, AMQP_EXCHANGE_UNBIND_METHOD,
+    if (!amqp_simple_rpc_decoded(_tcpConn.connnection(), _channelId, AMQP_EXCHANGE_UNBIND_METHOD,
                                  AMQP_EXCHANGE_UNBIND_OK_METHOD, &req))
     {
         auto res = amqp_get_rpc_reply(_tcpConn.connnection());
@@ -287,7 +284,7 @@ void AMQP::Channel::unbindExhange(std::string destination, std::string source,
 
 void AMQP::Channel::deleteQueue(const std::string& queue, bool ifUnused, bool ifEmpty)
 {
-    if (!amqp_queue_delete(_tcpConn.connnection(), _channelNum, amqp_cstring_bytes(queue.c_str()),
+    if (!amqp_queue_delete(_tcpConn.connnection(), _channelId, amqp_cstring_bytes(queue.c_str()),
                            ifUnused, ifEmpty))
     {
         auto res = amqp_get_rpc_reply(_tcpConn.connnection());
@@ -297,7 +294,7 @@ void AMQP::Channel::deleteQueue(const std::string& queue, bool ifUnused, bool if
 
 void AMQP::Channel::purgeQueue(const std::string& queue)
 {
-    if (!amqp_queue_purge(_tcpConn.connnection(), _channelNum, amqp_cstring_bytes(queue.c_str())))
+    if (!amqp_queue_purge(_tcpConn.connnection(), _channelId, amqp_cstring_bytes(queue.c_str())))
     {
         auto res = amqp_get_rpc_reply(_tcpConn.connnection());
         throw AMQP::Exception("Purge on the queue failed", res);
@@ -323,7 +320,7 @@ std::string AMQP::Channel::declareQueue(const std::string& queue, bool passive /
         table.entries = (amqp_table_entry_t_*)args->getEntries();
     }
 
-    amqp_queue_declare_ok_t* r = amqp_queue_declare(_tcpConn.connnection(), _channelNum, queue_,
+    amqp_queue_declare_ok_t* r = amqp_queue_declare(_tcpConn.connnection(), _channelId, queue_,
                                                     passive, durable, exclusive, autoDel, table);
 
     if (!r)
@@ -340,7 +337,7 @@ void AMQP::Channel::bindQueue(const std::string& exchange, const std::string& qu
                               const std::string& bindingkey)
 {
     amqp_queue_bind_ok_t* r =
-        amqp_queue_bind(_tcpConn.connnection(), _channelNum, amqp_cstring_bytes(queue.c_str()),
+        amqp_queue_bind(_tcpConn.connnection(), _channelId, amqp_cstring_bytes(queue.c_str()),
                         amqp_cstring_bytes(exchange.c_str()),
                         amqp_cstring_bytes(bindingkey.c_str()), amqp_empty_table);
     if (!r)
@@ -355,7 +352,7 @@ void AMQP::Channel::unbindQueue(const std::string& exchange, const std::string& 
 {
 
     amqp_queue_unbind_ok_t* r =
-        amqp_queue_unbind(_tcpConn.connnection(), _channelNum, amqp_cstring_bytes(queue.c_str()),
+        amqp_queue_unbind(_tcpConn.connnection(), _channelId, amqp_cstring_bytes(queue.c_str()),
                           amqp_cstring_bytes(exchange.c_str()),
                           amqp_cstring_bytes(bindingkey.c_str()), amqp_empty_table);
     if (!r)
@@ -369,25 +366,18 @@ void AMQP::Channel::close()
 {
     if (isOpened())
     {
-        amqp_channel_close(_tcpConn.connnection(), _channelNum, AMQP_REPLY_SUCCESS);
-        _isOpened = false;
+        amqp_channel_close(_tcpConn.connnection(), _channelId, AMQP_REPLY_SUCCESS);
         updateChannelState(CLOSED);
     }
 }
 
 void AMQP::Channel::open(uint16_t channel /*= 1*/)
 {
-    if (isOpened()) return;
-
-    _channelNum = channel;
-
-    if (!amqp_channel_open(_tcpConn.connnection(), _channelNum))
+    if (!amqp_channel_open(_tcpConn.connnection(), _channelId))
     {
         auto res = amqp_get_rpc_reply(_tcpConn.connnection());
         throw AMQP::Exception("Open channel failed", res);
     }
-
-    _isOpened = true;
     updateChannelState(ChannelState::USING);
 }
 
@@ -401,8 +391,8 @@ std::string AMQP::Channel::basicConsume(amqp_bytes_t queue, const std::string& c
                                         bool bExclusive /*= false*/, const Table* args)
 {
     amqp_connection_state_t conn = _tcpConn.connnection();
-
     amqp_table_t table = amqp_empty_table;
+
     if (args && args->getEntriesSize() > 0)
     {
         table.num_entries = args->getEntriesSize();
@@ -414,9 +404,9 @@ std::string AMQP::Channel::basicConsume(amqp_bytes_t queue, const std::string& c
         csmTag = amqp_empty_bytes;
     else
         csmTag = amqp_cstring_bytes(consumerTag.c_str());
-
     amqp_basic_consume_ok_t* r =
-        amqp_basic_consume(conn, _channelNum, queue, csmTag, bNoLocal, bNoAck, bExclusive, table);
+        amqp_basic_consume(conn, _channelId, queue, csmTag, bNoLocal, bNoAck, bExclusive, table);
+
     if (!r)
     {
         auto res = amqp_get_rpc_reply(_tcpConn.connnection());
@@ -433,33 +423,31 @@ void AMQP::Channel::assertConnection()
 
 void AMQP::Channel::dumpBasicProps(const MessageProps* pProps, amqp_basic_properties_t& pAmqpProps)
 {
-    if (pProps)
+    if (pProps == nullptr) return;
+
+    if (!pProps->replyQueue.empty())
     {
-        if (!pProps->replyQueue.empty())
-        {
-            pAmqpProps._flags |= AMQP_BASIC_REPLY_TO_FLAG;
-            pAmqpProps.reply_to =
-                amqp_bytes_malloc_dup(amqp_cstring_bytes(pProps->replyQueue.c_str()));
-            // m_bExitsReplyTo = true;
-        }
-
-        if (!pProps->correlationId.empty())
-        {
-            pAmqpProps._flags |= AMQP_BASIC_CORRELATION_ID_FLAG;
-            pAmqpProps.correlation_id = amqp_cstring_bytes(pProps->correlationId.c_str());
-        }
-
-        if (!pProps->msgId.empty())
-        {
-            pAmqpProps._flags |= AMQP_BASIC_MESSAGE_ID_FLAG;
-            pAmqpProps.message_id = amqp_cstring_bytes(pProps->msgId.c_str());
-        }
-
-        if (pProps->deliveryMode > 0) pAmqpProps.delivery_mode = pProps->deliveryMode;
-
-        if (!pProps->contentType.empty())
-            pAmqpProps.content_type = amqp_cstring_bytes(pProps->contentType.c_str());
+        pAmqpProps._flags |= AMQP_BASIC_REPLY_TO_FLAG;
+        pAmqpProps.reply_to = amqp_bytes_malloc_dup(amqp_cstring_bytes(pProps->replyQueue.c_str()));
+        // m_bExitsReplyTo = true;
     }
+
+    if (!pProps->correlationId.empty())
+    {
+        pAmqpProps._flags |= AMQP_BASIC_CORRELATION_ID_FLAG;
+        pAmqpProps.correlation_id = amqp_cstring_bytes(pProps->correlationId.c_str());
+    }
+
+    if (!pProps->msgId.empty())
+    {
+        pAmqpProps._flags |= AMQP_BASIC_MESSAGE_ID_FLAG;
+        pAmqpProps.message_id = amqp_cstring_bytes(pProps->msgId.c_str());
+    }
+
+    if (pProps->deliveryMode > 0) pAmqpProps.delivery_mode = pProps->deliveryMode;
+
+    if (!pProps->contentType.empty())
+        pAmqpProps.content_type = amqp_cstring_bytes(pProps->contentType.c_str());
 }
 
 void AMQP::Channel::initBasicProps(amqp_basic_properties_t& pAmqpProps)
@@ -472,24 +460,21 @@ void AMQP::Channel::initBasicProps(amqp_basic_properties_t& pAmqpProps)
 
 void AMQP::Channel::updateChannelState(ChannelState state)
 {
-    _tcpConn._channelsState.insert_or_assign(this->_channelNum, state);
+    _tcpConn._channelsState.insert_or_assign(this->_channelId, state);
 }
 
-AMQP::Channel::Channel(TCPConnection& conn, uint16_t channel) : _tcpConn(conn)
+AMQP::Channel::Channel(TCPConnection& conn, uint16_t id) : _tcpConn(conn), _channelId(id)
 {
-    this->_isOpened = false;
-    this->_channelNum = channel;
-
-    open(channel);
+    open(_channelId);
 }
 
 AMQP::Table::Table() { _entries = std::make_shared<std::vector<amqp_table_entry_t_>>(); }
 
-AMQP::Table::Table(Table&& other) { *this = std::move(other); }
+AMQP::Table::Table(Table&& other) noexcept { *this = std::move(other); }
 
 AMQP::Table::Table(const Table& other) { *this = other; }
 
-Table& AMQP::Table::operator=(Table&& other)
+Table& AMQP::Table::operator=(Table&& other) noexcept
 {
     if (this != &other)
     {
