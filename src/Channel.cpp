@@ -219,7 +219,7 @@ std::string AMQP::Channel::declareExchange(std::string exchangeName, std::string
     return exchangeName;
 }
 
-void AMQP::Channel::bindExhange(std::string destination, std::string source, std::string routingKey,
+void AMQP::Channel::bindExchange(std::string destination, std::string source, std::string routingKey,
                                 const AMQP::Table* args)
 {
     amqp_table_t table = amqp_empty_table;
@@ -256,7 +256,7 @@ void AMQP::Channel::deleteExchange(std::string exchange, bool ifUnUsed, bool noW
     }
 }
 
-void AMQP::Channel::unbindExhange(std::string destination, std::string source,
+void AMQP::Channel::unbindExchange(std::string destination, std::string source,
                                   std::string routingKey, const AMQP::Table* args)
 {
     amqp_table_t table = amqp_empty_table;

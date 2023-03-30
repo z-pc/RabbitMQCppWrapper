@@ -243,12 +243,12 @@ public:
                                         bool autoDel = false, bool internal = false,
                                         bool noWait = true, const AMQP::Table* args = nullptr);
 
-    virtual void bindExhange(std::string destination, std::string source, std::string routingKey,
+    virtual void bindExchange(std::string destination, std::string source, std::string routingKey,
                              const AMQP::Table* args = nullptr);
 
     virtual void deleteExchange(std::string exchange, bool ifUnUsed = true, bool noWait = false);
 
-    virtual void unbindExhange(std::string destination, std::string source, std::string routingKey,
+    virtual void unbindExchange(std::string destination, std::string source, std::string routingKey,
                                const AMQP::Table* args = nullptr);
 
     virtual std::string declareQueue(const std::string& queueName, bool passive = false,

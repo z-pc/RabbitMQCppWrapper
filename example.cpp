@@ -34,8 +34,8 @@ int main(void)
         // exchange bind
         {
             auto exchange_bind = channel->declareExchange("test_declare_exchange_bind", "direct");
-            channel->bindExhange(exchange_bind, exchange, "test_bind_exchange");
-            channel->unbindExhange(exchange_bind, exchange, "test_bind_exchange");
+            channel->bindExchange(exchange_bind, exchange, "test_bind_exchange");
+            channel->unbindExchange(exchange_bind, exchange, "test_bind_exchange");
             channel->deleteExchange(exchange_bind);
         }
 
