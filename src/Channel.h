@@ -204,6 +204,17 @@ public:
 
     AMQP::TCPConnection& connection() { return _tcpConn; };
 
+    /**
+     * Consume on queue.
+     *
+     * @param strQueue
+     * @param consumerTag
+     * @param bNoLocal
+     * @param bNoAck
+     * @param bExclusive
+     * @param args
+     * @return consume tag
+     */
     virtual std::string basicConsume(const std::string& strQueue,
                                      const std::string& consumerTag = "", bool bNoLocal = false,
                                      bool bNoAck = false, bool bExclusive = false,
@@ -214,13 +225,12 @@ public:
 
     virtual void basicCancel(const std::string& consumerTag);
 
-    /**
-     * @brief Get a message
-     */
     virtual AMQP::Envelope getMessage(const struct timeval& timeOut) final;
 
     /**
-     * @brief Ack a message
+     * @brief Ack a message.
+     * @param en: Evenlope to ack
+     * @param multiple
      */
     virtual void basicAck(const AMQP::Envelope& en, bool multiple = false);
     virtual void basicAck(std::uint64_t deliveryTag, bool multiple = false);
@@ -238,19 +248,43 @@ public:
                               const std::string& message,
                               const AMQP::MessageProps* msgProps = nullptr);
 
+    /**
+     * Declare an exchange.
+     * 
+     * @param exchangeName
+     * @param type
+     * @param passive
+     * @param durable
+     * @param autoDel
+     * @param internal
+     * @param noWait
+     * @param args
+     * @return The exchange name
+     */
     virtual std::string declareExchange(std::string exchangeName, std::string type = "direct",
                                         bool passive = false, bool durable = true,
                                         bool autoDel = false, bool internal = false,
                                         bool noWait = true, const AMQP::Table* args = nullptr);
 
     virtual void bindExchange(std::string destination, std::string source, std::string routingKey,
-                             const AMQP::Table* args = nullptr);
+                              const AMQP::Table* args = nullptr);
 
     virtual void deleteExchange(std::string exchange, bool ifUnUsed = true, bool noWait = false);
 
     virtual void unbindExchange(std::string destination, std::string source, std::string routingKey,
-                               const AMQP::Table* args = nullptr);
+                                const AMQP::Table* args = nullptr);
 
+    /**
+     * Declare a queue.
+     * 
+     * @param queueName
+     * @param passive
+     * @param durable
+     * @param exclusive
+     * @param autoDelete
+     * @param args
+     * @return The queue name
+     */
     virtual std::string declareQueue(const std::string& queueName, bool passive = false,
                                      bool durable = false, bool exclusive = false,
                                      bool autoDelete = false, const AMQP::Table* args = nullptr);
