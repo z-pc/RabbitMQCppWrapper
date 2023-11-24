@@ -33,17 +33,6 @@ namespace AMQP
 #define AMQP_TIMEOUT_DEFAULT            45
 #define AMQP_CONSUME_MAX_PREFETCH_COUNT 65535
 
-struct ConnectionInfo
-{
-    std::string hostname;
-    std::string vhost;
-    std::string exchange;
-    std::string routingkey;
-    std::string username;
-    std::string password;
-    unsigned int port;
-};
-
 enum ChannelState
 {
     READY = 0,
