@@ -26,6 +26,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace AMQP
 {
@@ -50,8 +51,161 @@ enum ChannelState
     CLOSED = 2
 };
 
-class Table;
-class Channel;
+typedef amqp_bytes_t Message;
+
+struct MessageProps
+{
+    std::string replyQueue;
+    std::string correlationId;
+    std::string contentType;
+    std::string msgId;
+    std::uint8_t deliveryMode;
+    MessageProps()
+    {
+        replyQueue = "";
+        correlationId = "";
+        contentType = "";
+        msgId = "";
+        deliveryMode = 0;
+    }
+};
+
+struct Envelope
+{
+    bool redelivered;
+    std::uint16_t channelNum;
+    std::uint64_t deliveryTag;
+    std::string consumerTag;
+    std::string exchange;
+    std::string routingKey;
+    AMQP::Message msg;
+
+    Envelope()
+    {
+        redelivered = false;
+        channelNum = 0;
+        deliveryTag = 0;
+        consumerTag = "";
+        exchange = "";
+        routingKey = "";
+        msg.len = 0;
+        msg.bytes = nullptr;
+    }
+
+    Envelope(bool redelivered, std::uint16_t channel, std::uint64_t delivery_tag,
+             std::string consumer_tag, std::string exchange, std::string routing_key,
+             AMQP::Message msg)
+    {
+        this->redelivered = redelivered;
+        this->channelNum = channel;
+        this->deliveryTag = delivery_tag;
+        this->consumerTag = consumer_tag;
+        this->exchange = exchange;
+        this->routingKey = routing_key;
+        this->msg = msg;
+    }
+
+    ~Envelope() { destroy(); }
+
+    void destroy()
+    {
+        if (msg.bytes)
+        {
+            delete[] msg.bytes;
+            msg.bytes = nullptr;
+            msg.len = 0;
+        }
+    }
+
+    Envelope(Envelope&& en) noexcept { *this = std::move(en); }
+    Envelope& operator=(Envelope&& en) noexcept
+    {
+        if (this != &en)
+        {
+            redelivered = std::move(en.redelivered);
+            channelNum = std::move(en.channelNum);
+            deliveryTag = std::move(en.deliveryTag);
+            consumerTag = std::move(en.consumerTag);
+            exchange = std::move(en.exchange);
+            routingKey = std::move(en.routingKey);
+            msg.len = std::move(en.msg.len);
+            msg.bytes = std::move(en.msg.bytes);
+
+            en.msg.len = 0;
+            en.msg.bytes = nullptr;
+        }
+
+        return *this;
+    }
+
+    Envelope(const Envelope& en) { *this = en; };
+    Envelope& operator=(const Envelope& en)
+    {
+        if (this != &en)
+        {
+            redelivered = en.redelivered;
+            channelNum = en.channelNum;
+            deliveryTag = en.deliveryTag;
+            consumerTag = en.consumerTag;
+            exchange = en.exchange;
+            routingKey = en.routingKey;
+            msg.len = en.msg.len;
+
+            msg.bytes = new char[msg.len];
+            memcpy(msg.bytes, en.msg.bytes, msg.len);
+        }
+
+        return *this;
+    }
+};
+
+class Table
+{
+public:
+    typedef std::vector<amqp_table_entry_t_> Entries;
+
+    Table();
+    Table(const Table&);
+    Table(Table&&) noexcept;
+    ~Table() { empty(); };
+
+    void addEntry(const char* key, const char* value);
+    void addEntry(const char* key, bool value);
+    void addEntry(const char* key, float value);
+    void addEntry(const char* key, double value);
+    void addEntry(const char* key, std::int8_t value);
+    void addEntry(const char* key, std::uint8_t value);
+    void addEntry(const char* key, std::int16_t value);
+    void addEntry(const char* key, std::uint16_t value);
+    void addEntry(const char* key, std::int32_t value);
+    void addEntry(const char* key, std::uint32_t value);
+    template <typename T, typename... Args>
+    void addEntry(const char* key, const T& value, const char* key2, Args&&... args)
+    {
+        addEntry(key, value);
+        addEntry(key2, std::forward<Args>(args)...);
+    }
+    void removeEntry(const char* key);
+
+    const amqp_table_entry_t_* getEntries() const
+    {
+        if (_entries) return _entries->data();
+        return nullptr;
+    }
+    std::size_t getEntriesSize() const
+    {
+        if (_entries) return _entries->size();
+        return 0;
+    }
+
+    Table& operator=(const Table&);
+    Table& operator=(Table&&) noexcept;
+
+    void empty();
+
+private:
+    std::shared_ptr<std::vector<amqp_table_entry_t_>> _entries;
+};
 
 /**
  * @brief TCP Connection

@@ -6,7 +6,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 project(wrapper_ex C CXX)
 
-include_directories(${LIBRABBITMQ_INCLUDE_DIRS})
+find_package(rabbitmq-c CONFIG REQUIRED)
 
 add_executable(wrapper_ex 
      example.cpp 
@@ -17,4 +17,5 @@ add_executable(wrapper_ex
      src/Channel.cpp
      src/Exception.h
      src/Exception.cpp)
-target_link_libraries(wrapper_ex PUBLIC ${LIBRABBITMQ_LIBS})
+
+target_link_libraries(wrapper_ex PUBLIC rabbitmq::rabbitmq)

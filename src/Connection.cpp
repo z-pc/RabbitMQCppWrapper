@@ -105,7 +105,7 @@ AMQP::Channel::u_ptr AMQP::TCPConnection::createChannel(int32_t id)
 
 ChannelState AMQP::TCPConnection::getChannelState(std::uint16_t id)
 {
-    auto& resFound = _channelsState.find(id);
+    auto resFound = _channelsState.find(id);
     if (resFound == _channelsState.end()) return ChannelState::READY;
     return resFound->second;
 }
@@ -135,4 +135,252 @@ void AMQP::TCPConnection::assertRpcReply(const std::string& msgThrow)
 void AMQP::TCPConnection::assertRpcReply(const std::string& msgThrow, const amqp_rpc_reply_t& res)
 {
     if (res.reply_type != AMQP_RESPONSE_NORMAL) throw Exception(msgThrow, res);
+}
+
+
+AMQP::Table::Table() { _entries = std::make_shared<std::vector<amqp_table_entry_t_>>(); }
+
+AMQP::Table::Table(Table&& other) noexcept { *this = std::move(other); }
+
+AMQP::Table::Table(const Table& other) { *this = other; }
+
+Table& AMQP::Table::operator=(Table&& other) noexcept
+{
+    if (this != &other)
+    {
+        empty();
+        this->_entries = other._entries;
+        other._entries = std::make_shared<Entries>();
+    }
+    return *this;
+}
+
+void AMQP::Table::empty()
+{
+    if (_entries && _entries->size())
+    {
+        for (auto it = _entries->begin(); it != _entries->end(); it++)
+        {
+            if (it->value.kind == AMQP_FIELD_KIND_BYTES) amqp_bytes_free(it->value.value.bytes);
+            amqp_bytes_free(it->key);
+        }
+    }
+    _entries = std::make_shared<Entries>();
+}
+
+Table& AMQP::Table::operator=(const Table& other)
+{
+
+    if (this != &other)
+    {
+        empty();
+
+        for (auto it = other._entries->begin(); it != other._entries->end(); it++)
+        {
+            switch (it->value.kind)
+            {
+            case AMQP_FIELD_KIND_BYTES:
+            {
+                addEntry((const char*)it->key.bytes, (const char*)it->value.value.bytes.bytes);
+            }
+            break;
+            case AMQP_FIELD_KIND_BOOLEAN:
+            {
+                addEntry((const char*)it->key.bytes, it->value.value.boolean);
+            }
+            break;
+            case AMQP_FIELD_KIND_F32:
+            {
+                addEntry((const char*)it->key.bytes, it->value.value.f32);
+            }
+            break;
+            case AMQP_FIELD_KIND_F64:
+            {
+                addEntry((const char*)it->key.bytes, it->value.value.f64);
+            }
+            break;
+            case AMQP_FIELD_KIND_I8:
+            {
+                addEntry((const char*)it->key.bytes, it->value.value.i8);
+            }
+            break;
+            case AMQP_FIELD_KIND_U8:
+            {
+                addEntry((const char*)it->key.bytes, it->value.value.u8);
+            }
+            break;
+            case AMQP_FIELD_KIND_I16:
+            {
+                addEntry((const char*)it->key.bytes, it->value.value.i16);
+            }
+            break;
+            case AMQP_FIELD_KIND_U16:
+            {
+                addEntry((const char*)it->key.bytes, it->value.value.u16);
+            }
+            break;
+            case AMQP_FIELD_KIND_I32:
+            {
+                addEntry((const char*)it->key.bytes, it->value.value.i32);
+            }
+            break;
+            case AMQP_FIELD_KIND_U32:
+            {
+                addEntry((const char*)it->key.bytes, it->value.value.u32);
+            }
+            break;
+            default:
+                break;
+            }
+        }
+    }
+    return *this;
+}
+
+void AMQP::Table::addEntry(const char* key, const char* value)
+{
+    if (_entries == nullptr) return;
+
+    amqp_table_entry_t entry;
+
+    entry.key = amqp_bytes_malloc_dup(amqp_cstring_bytes(key));
+    entry.value.kind = AMQP_FIELD_KIND_BYTES;
+    entry.value.value.bytes = amqp_bytes_malloc_dup(amqp_cstring_bytes(value));
+
+    _entries->push_back(entry);
+}
+
+void AMQP::Table::addEntry(const char* key, bool value)
+{
+    if (_entries == nullptr) return;
+
+    amqp_table_entry_t entry;
+
+    entry.key = amqp_bytes_malloc_dup(amqp_cstring_bytes(key));
+    entry.value.kind = AMQP_FIELD_KIND_BOOLEAN;
+    entry.value.value.boolean = (amqp_boolean_t)value;
+
+    _entries->push_back(entry);
+}
+
+void AMQP::Table::addEntry(const char* key, float value)
+{
+    if (_entries == nullptr) return;
+
+    amqp_table_entry_t entry;
+
+    entry.key = amqp_bytes_malloc_dup(amqp_cstring_bytes(key));
+    entry.value.kind = AMQP_FIELD_KIND_F32;
+    entry.value.value.f32 = value;
+
+    _entries->push_back(entry);
+}
+
+void AMQP::Table::addEntry(const char* key, double value)
+{
+    if (_entries == nullptr) return;
+
+    amqp_table_entry_t entry;
+
+    entry.key = amqp_bytes_malloc_dup(amqp_cstring_bytes(key));
+    entry.value.kind = AMQP_FIELD_KIND_F64;
+    entry.value.value.f64 = value;
+
+    _entries->push_back(entry);
+}
+
+void AMQP::Table::addEntry(const char* key, std::int8_t value)
+{
+    if (_entries == nullptr) return;
+
+    amqp_table_entry_t entry;
+
+    entry.key = amqp_bytes_malloc_dup(amqp_cstring_bytes(key));
+    entry.value.kind = AMQP_FIELD_KIND_I8;
+    entry.value.value.i8 = value;
+
+    _entries->push_back(entry);
+}
+
+void AMQP::Table::addEntry(const char* key, std::uint8_t value)
+{
+    if (_entries == nullptr) return;
+
+    amqp_table_entry_t entry;
+
+    entry.key = amqp_bytes_malloc_dup(amqp_cstring_bytes(key));
+    entry.value.kind = AMQP_FIELD_KIND_U8;
+    entry.value.value.u8 = value;
+
+    _entries->push_back(entry);
+}
+
+void AMQP::Table::addEntry(const char* key, std::int16_t value)
+{
+    if (_entries == nullptr) return;
+
+    amqp_table_entry_t entry;
+
+    entry.key = amqp_bytes_malloc_dup(amqp_cstring_bytes(key));
+    entry.value.kind = AMQP_FIELD_KIND_I16;
+    entry.value.value.i16 = value;
+
+    _entries->push_back(entry);
+}
+
+void AMQP::Table::addEntry(const char* key, std::uint16_t value)
+{
+    if (_entries == nullptr) return;
+
+    amqp_table_entry_t entry;
+
+    entry.key = amqp_bytes_malloc_dup(amqp_cstring_bytes(key));
+    entry.value.kind = AMQP_FIELD_KIND_U16;
+    entry.value.value.u16 = value;
+
+    _entries->push_back(entry);
+}
+
+void AMQP::Table::addEntry(const char* key, std::int32_t value)
+{
+    if (_entries == nullptr) return;
+
+    amqp_table_entry_t entry;
+
+    entry.key = amqp_bytes_malloc_dup(amqp_cstring_bytes(key));
+    entry.value.kind = AMQP_FIELD_KIND_I32;
+    entry.value.value.i32 = value;
+
+    _entries->push_back(entry);
+}
+
+void AMQP::Table::addEntry(const char* key, std::uint32_t value)
+{
+    if (_entries == nullptr) return;
+
+    amqp_table_entry_t entry;
+
+    entry.key = amqp_bytes_malloc_dup(amqp_cstring_bytes(key));
+    entry.value.kind = AMQP_FIELD_KIND_U32;
+    entry.value.value.u32 = value;
+
+    _entries->push_back(entry);
+}
+
+void AMQP::Table::removeEntry(const char* key)
+{
+    if (_entries && _entries->size())
+    {
+        for (auto it = _entries->begin(); it != _entries->end(); it++)
+        {
+            if (std::string((char*)it->key.bytes, it->key.len) == key)
+            {
+                if (it->value.kind == AMQP_FIELD_KIND_BYTES) amqp_bytes_free(it->value.value.bytes);
+                amqp_bytes_free(it->key);
+
+                _entries->erase(it);
+                break;
+            }
+        }
+    }
 }
