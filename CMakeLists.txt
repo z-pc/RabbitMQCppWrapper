@@ -8,8 +8,7 @@ project(wrapper_ex C CXX)
 
 find_package(rabbitmq-c CONFIG REQUIRED)
 
-add_executable(wrapper_ex 
-     example.cpp 
+set(WRAPPER_SRC 
      src/noncopyable.h
      src/Connection.h
      src/Connection.cpp
@@ -18,4 +17,15 @@ add_executable(wrapper_ex
      src/Exception.h
      src/Exception.cpp)
 
-target_link_libraries(wrapper_ex PUBLIC rabbitmq::rabbitmq)
+list(APPEND WRAPPER_EXAMPLES
+ex_fully 
+ex_consumer
+ex_publisher
+ex_queue
+ex_exchange
+)
+
+foreach(example IN LISTS WRAPPER_EXAMPLES)
+     add_executable(${example} examples/${example}.cpp ${WRAPPER_SRC})
+     target_link_libraries(${example} PUBLIC rabbitmq::rabbitmq )
+endforeach()

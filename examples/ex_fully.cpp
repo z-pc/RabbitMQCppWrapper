@@ -1,14 +1,10 @@
-#include "src/Channel.h"
-#include "src/Connection.h"
+#include "../src/Channel.h"
+#include "../src/Connection.h"
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <winsock2.h>
-
-#define _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#include <stdlib.h>
 
 using namespace std;
 
@@ -94,8 +90,5 @@ int main(void)
     {
         cout << e.what() << endl;
     }
-
-    _CrtDumpMemoryLeaks();
-    system("pause");
     return 0;
 }
