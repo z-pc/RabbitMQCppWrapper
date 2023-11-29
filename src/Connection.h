@@ -59,6 +59,8 @@ struct MessageProps
     }
 };
 
+// Envelope 
+// The copy constructor or assignment operator is responsible for copying data.
 struct Envelope
 {
     bool redelivered;
@@ -94,7 +96,7 @@ struct Envelope
         this->msg = msg;
     }
 
-    ~Envelope() { destroy(); }
+    virtual ~Envelope() { destroy(); }
 
     void destroy()
     {
@@ -148,6 +150,8 @@ struct Envelope
     }
 };
 
+// Envelope 
+// The copy constructor or assignment operator is responsible for copying data.
 class Table
 {
 public:
@@ -156,7 +160,7 @@ public:
     Table();
     Table(const Table&);
     Table(Table&&) noexcept;
-    ~Table() { empty(); };
+    virtual ~Table() { empty(); };
 
     void addEntry(const char* key, const char* value);
     void addEntry(const char* key, bool value);
@@ -216,7 +220,7 @@ public:
      * @brief A contructor with host and port, this will also connect to the server
      */
     TCPConnection(const std::string& host, std::uint16_t port);
-    ~TCPConnection() noexcept;
+    virtual ~TCPConnection() noexcept;
 
     /**
      * @brief Connect to amqp server with host and port, if was connected, do nothing.
@@ -350,7 +354,7 @@ class SSLConnection : public TCPConnection
 {
 public:
     SSLConnection(){};
-    ~SSLConnection(){};
+    virtual ~SSLConnection(){};
 
 private:
 };
