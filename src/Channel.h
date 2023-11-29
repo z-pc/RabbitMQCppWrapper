@@ -73,8 +73,11 @@ public:
      * @param en: Evenlope to ack
      * @param multiple
      */
-    virtual void basicAck(const AMQP::Envelope& en, bool multiple = false);
-    virtual void basicAck(std::uint64_t deliveryTag, bool multiple = false);
+    virtual int basicAck(const AMQP::Envelope& en, bool multiple = false);
+    virtual int basicAck(std::uint64_t deliveryTag, bool multiple = false);
+
+    virtual int basicNAck(const AMQP::Envelope& en, bool multiple = false, bool requeue = false);
+    virtual int basicNAck(std::uint64_t deliveryTag, bool multiple = false, bool requeue = false);
 
     virtual void basicQos(std::uint16_t perfectCount, std::uint32_t perfectSize = 0,
                           bool global = false);
@@ -91,7 +94,7 @@ public:
 
     /**
      * Declare an exchange.
-     * 
+     *
      * @param exchangeName
      * @param type
      * @param passive
@@ -117,7 +120,7 @@ public:
 
     /**
      * Declare a queue.
-     * 
+     *
      * @param queueName
      * @param passive
      * @param durable

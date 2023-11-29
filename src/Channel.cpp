@@ -130,7 +130,7 @@ AMQP::Envelope AMQP::Channel::getMessage(const timeval& timeOut)
     return en;
 }
 
-void AMQP::Channel::basicAck(const AMQP::Envelope& en, bool multiple /*= false*/)
+int AMQP::Channel::basicAck(const AMQP::Envelope& en, bool multiple /*= false*/)
 {
     return basicAck(en.deliveryTag, multiple);
 }
@@ -147,14 +147,31 @@ void AMQP::Channel::basicQos(std::uint16_t prefetchCount, std::uint32_t prefetch
         }
 }
 
-void AMQP::Channel::basicAck(uint64_t m_delivery_tag, bool multiple /*= false*/)
+int AMQP::Channel::basicAck(uint64_t m_delivery_tag, bool multiple /*= false*/)
 {
     int res = amqp_basic_ack(_tcpConn.connnection(), this->_channelId, m_delivery_tag, multiple);
     if (0 > res)
     {
-        auto res = amqp_get_rpc_reply(_tcpConn.connnection());
-        throw AMQP::Exception("Ack message failed", res);
+        auto resRpc = amqp_get_rpc_reply(_tcpConn.connnection());
+        throw AMQP::Exception("Ack message failed", resRpc);
     }
+    return res;
+}
+
+int AMQP::Channel::basicNAck(const AMQP::Envelope& en, bool multiple, bool requeue)
+{
+    return basicNAck(en.deliveryTag, multiple, requeue);
+}
+
+int AMQP::Channel::basicNAck(std::uint64_t deliveryTag, bool multiple, bool requeue)
+{
+    int res = amqp_basic_nack(_tcpConn.connnection(), this->_channelId, deliveryTag, multiple, requeue);
+    if (0 > res)
+    {
+        auto resRpc = amqp_get_rpc_reply(_tcpConn.connnection());
+        throw AMQP::Exception("NAck message failed", resRpc);
+    }
+    return res;
 }
 
 void AMQP::Channel::basicPublish(const std::string& strExchange, const std::string& strRoutingKey,
@@ -219,8 +236,8 @@ std::string AMQP::Channel::declareExchange(std::string exchangeName, std::string
     return exchangeName;
 }
 
-void AMQP::Channel::bindExchange(std::string destination, std::string source, std::string routingKey,
-                                const AMQP::Table* args)
+void AMQP::Channel::bindExchange(std::string destination, std::string source,
+                                 std::string routingKey, const AMQP::Table* args)
 {
     amqp_table_t table = amqp_empty_table;
     if (args && args->getEntriesSize() > 0)
@@ -257,7 +274,7 @@ void AMQP::Channel::deleteExchange(std::string exchange, bool ifUnUsed, bool noW
 }
 
 void AMQP::Channel::unbindExchange(std::string destination, std::string source,
-                                  std::string routingKey, const AMQP::Table* args)
+                                   std::string routingKey, const AMQP::Table* args)
 {
     amqp_table_t table = amqp_empty_table;
     if (args && args->getEntriesSize() > 0)
@@ -467,4 +484,3 @@ AMQP::Channel::Channel(TCPConnection& conn, uint16_t id) : _tcpConn(conn), _chan
 {
     open(_channelId);
 }
-

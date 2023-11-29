@@ -4,7 +4,7 @@ IndentWidth: 4
 BreakBeforeBraces: Allman
 AllowShortIfStatementsOnASingleLine: true
 IndentCaseLabels: false
-ColumnLimit: 100
+ColumnLimit: 0
 AccessModifierOffset: -4
 AllowShortFunctionsOnASingleLine: true
 AllowShortLambdasOnASingleLine: true
