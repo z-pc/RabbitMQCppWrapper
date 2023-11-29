@@ -85,6 +85,10 @@ void AMQP::TCPConnection::setRPCTimeOut(const timeval& timeOut)
 
 int AMQP::TCPConnection::getHeartBeat() { return amqp_get_heartbeat(_pConn); }
 
+bool AMQP::TCPConnection::framesEnqueued() { return amqp_frames_enqueued(_pConn); }
+
+bool AMQP::TCPConnection::dataInBuffer() { return amqp_data_in_buffer(_pConn); }
+
 std::shared_ptr<TCPConnection> AMQP::TCPConnection::createConnection(const std::string& host,
                                                                      std::uint16_t port)
 {
@@ -136,7 +140,6 @@ void AMQP::TCPConnection::assertRpcReply(const std::string& msgThrow, const amqp
 {
     if (res.reply_type != AMQP_RESPONSE_NORMAL) throw Exception(msgThrow, res);
 }
-
 
 AMQP::Table::Table() { _entries = std::make_shared<std::vector<amqp_table_entry_t_>>(); }
 

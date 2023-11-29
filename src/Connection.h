@@ -274,6 +274,8 @@ public:
     std::string getVHost() const { return _hostName; };
     std::string getUser() const { return _username; };
     int getHeartBeat();
+    bool framesEnqueued();
+    bool dataInBuffer();
 
     /**
      * @brief Create and connect
