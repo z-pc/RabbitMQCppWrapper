@@ -89,6 +89,11 @@ bool AMQP::TCPConnection::framesEnqueued() { return amqp_frames_enqueued(_pConn)
 
 bool AMQP::TCPConnection::dataInBuffer() { return amqp_data_in_buffer(_pConn); }
 
+int AMQP::TCPConnection::getFrameMax()
+{
+    return amqp_get_frame_max(_pConn);
+}
+
 std::shared_ptr<TCPConnection> AMQP::TCPConnection::createConnection(const std::string& host,
                                                                      std::uint16_t port)
 {

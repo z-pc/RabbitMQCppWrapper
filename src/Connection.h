@@ -59,7 +59,7 @@ struct MessageProps
     }
 };
 
-// Envelope 
+// Envelope
 // The copy constructor or assignment operator is responsible for copying data.
 struct Envelope
 {
@@ -150,7 +150,7 @@ struct Envelope
     }
 };
 
-// Envelope 
+// Envelope
 // The copy constructor or assignment operator is responsible for copying data.
 class Table
 {
@@ -280,6 +280,7 @@ public:
     int getHeartBeat();
     bool framesEnqueued();
     bool dataInBuffer();
+    int getFrameMax();
 
     /**
      * @brief Create and connect
