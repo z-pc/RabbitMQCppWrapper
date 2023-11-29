@@ -360,6 +360,8 @@ public:
 private:
 };
 
+inline uint32_t getAMQPVersion() { return amqp_version_number(); };
+
 } // namespace AMQP
 
 #endif // !AMQP_CPP_CONNECTION_H__

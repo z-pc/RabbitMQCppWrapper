@@ -90,3 +90,8 @@ void AMQP::Exception::replyToString(const amqp_rpc_reply_t& res, std::string& ms
         msg = buf;
     }
 }
+
+std::string AMQP::Exception::errorToString(int err)
+{
+    return std::string(amqp_error_string2(err));
+}

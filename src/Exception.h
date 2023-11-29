@@ -40,6 +40,7 @@ public:
     virtual const char* what() const throw();
 
     static void replyToString(const amqp_rpc_reply_t& res, std::string& msg, int& code);
+    static std::string errorToString(int err);
 
 protected:
     std::string _message;
