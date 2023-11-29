@@ -174,6 +174,17 @@ int AMQP::Channel::basicNAck(std::uint64_t deliveryTag, bool multiple, bool requ
     return res;
 }
 
+int AMQP::Channel::basicReject(std::uint64_t deliveryTag, bool requeue)
+{
+    int res = amqp_basic_reject(_tcpConn.connnection(), this->_channelId, deliveryTag, requeue);
+    if (0 > res)
+    {
+        auto resRpc = amqp_get_rpc_reply(_tcpConn.connnection());
+        throw AMQP::Exception("Reject message failed", resRpc);
+    }
+    return res;
+}
+
 void AMQP::Channel::basicPublish(const std::string& strExchange, const std::string& strRoutingKey,
                                  const AMQP::Message& message,
                                  const MessageProps* pProps /*= nullptr*/)

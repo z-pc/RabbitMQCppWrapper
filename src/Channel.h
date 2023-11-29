@@ -79,6 +79,8 @@ public:
     virtual int basicNAck(const AMQP::Envelope& en, bool multiple = false, bool requeue = false);
     virtual int basicNAck(std::uint64_t deliveryTag, bool multiple = false, bool requeue = false);
 
+    virtual int basicReject(std::uint64_t deliveryTag, bool requeue);
+
     virtual void basicQos(std::uint16_t perfectCount, std::uint32_t perfectSize = 0,
                           bool global = false);
 
