@@ -243,7 +243,7 @@ public:
     /**
      * @brief Close connection, the function will be implicitly called by deconstructor.
      */
-    virtual void disconnect() noexcept;
+    virtual int disconnect() noexcept;
 
     /**
      * @brief Set rpc timeout for connection
@@ -302,6 +302,7 @@ public:
 
 protected:
     amqp_connection_state_t connnection() { return _pConn; };
+    void reset();
 
     std::string _hostName;
     std::string _vHost;

@@ -71,11 +71,12 @@ void AMQP::TCPConnection::login(const std::string& strVHost, const std::string& 
     login(strVHost, strUser, strPass, heartBeat, properties, channelMax, frameMax, saslMethod);
 }
 
-void AMQP::TCPConnection::disconnect() noexcept
+int AMQP::TCPConnection::disconnect() noexcept
 {
     amqp_connection_close(_pConn, AMQP_REPLY_SUCCESS);
     int r = amqp_destroy_connection(_pConn);
-    _isConnected = false;
+    reset();
+    return r;
 }
 
 void AMQP::TCPConnection::setRPCTimeOut(const timeval& timeOut)
@@ -144,6 +145,15 @@ void AMQP::TCPConnection::assertRpcReply(const std::string& msgThrow)
 void AMQP::TCPConnection::assertRpcReply(const std::string& msgThrow, const amqp_rpc_reply_t& res)
 {
     if (res.reply_type != AMQP_RESPONSE_NORMAL) throw Exception(msgThrow, res);
+}
+
+void AMQP::TCPConnection::reset()
+{
+    _isConnected = false;
+    _isLogined = false;
+    _pSocket = nullptr;
+    _pConn = nullptr;
+    _channelsState.clear();
 }
 
 AMQP::Table::Table() { _entries = std::make_shared<std::vector<amqp_table_entry_t_>>(); }
