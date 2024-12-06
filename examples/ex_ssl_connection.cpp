@@ -9,17 +9,22 @@ using namespace std;
 
 int main(void)
 {
+    std::string host = "localhost";
+    int port = 5672;
+    string user = "user";
+    string pass = "pass";
+    string vhost = "/";
+
     try
     {
-        AMQP::Connection::ptr cnn = AMQP::createConnection("localhost", 5672);
-        cnn->login("/", "guest", "guest");
-        auto channel = cnn->createChannel();
-        channel->basicPublish("test_existing_exchange", "test_existing_queue", "congratulation");
+        AMQP::Connection::ptr cnn = AMQP::createConnection(host, port);
+        cnn->login(vhost, user, pass);
     }
     catch (const exception& e)
     {
         cout << e.what() << endl;
     }
 
+    system("pause");
     return 0;
 }

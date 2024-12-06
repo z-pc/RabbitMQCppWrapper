@@ -12,7 +12,7 @@ int main(void)
 {
     try
     {
-        AMQP::TCPConnection::ptr cnn = AMQP::TCPConnection::createConnection("localhost", 5672);
+        AMQP::Connection::ptr cnn = AMQP::createConnection("localhost", 5672);
         cnn->login("/", "guest", "guest");
         auto channel = cnn->createChannel();
         std::string cmsTag = channel->basicConsume("test_existing_queue");

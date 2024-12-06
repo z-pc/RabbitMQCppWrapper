@@ -12,7 +12,7 @@ int main(void)
 {
     try
     {
-        AMQP::TCPConnection::ptr cnn = AMQP::TCPConnection::createConnection("localhost", 5672);
+        AMQP::Connection::ptr cnn = AMQP::createConnection("localhost", 5672);
 
         // create connection with properties
         {

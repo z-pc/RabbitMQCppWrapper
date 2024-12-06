@@ -4,7 +4,7 @@
 // Author: Le Xuan Tuan Anh
 //
 // Copyright 2022 Le Xuan Tuan Anh
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -21,7 +21,7 @@
 #ifndef AMQP_CPP_EXCEPTION_H__
 #define AMQP_CPP_EXCEPTION_H__
 
-#include "amqp.h"
+#include "rabbitmq-c/amqp.h"
 #include <exception>
 #include <string>
 

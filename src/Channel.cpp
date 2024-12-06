@@ -1,22 +1,24 @@
-//////////////////////////////////////////////////////////////////////////
-// File: Channel.cpp
-// Description: The implement of channel
-// Author: Le Xuan Tuan Anh
-//
-// Copyright 2022 Le Xuan Tuan Anh
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//    http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-//////////////////////////////////////////////////////////////////////////
+/**
+ * @file Channel.h
+ * @brief The implementation of the AMQP channel class, which handles
+ * message consumption, publishing, and managing exchanges and queues.
+ *
+ * This file provides the implementation for establishing, managing, and interacting with AMQP connections
+ * and associated data structures such as messages, envelopes, and tables. It includes support for both
+ * standard and SSL connections.
+ *
+ * @author Le Xuan Tuan Anh
+ * @copyright 2022
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at:
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is
+ * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and limitations under the License.
+ */
 
 #include "Channel.h"
 #include "Exception.h"
@@ -24,17 +26,15 @@
 using namespace AMQP;
 
 std::string AMQP::Channel::basicConsume(const std::string& strQueue, const std::string& consumerTag,
-                                        bool bNoLocal /*= false*/, bool bNoAck /*= false*/,
-                                        bool bExclusive /*= false*/, const Table* args)
+                                        bool bNoLocal /*= false*/, bool bNoAck /*= false*/, bool bExclusive /*= false*/,
+                                        const Table* args)
 {
-    return basicConsume(amqp_cstring_bytes(strQueue.c_str()), consumerTag, bNoLocal, bNoAck,
-                        bExclusive, args);
+    return basicConsume(amqp_cstring_bytes(strQueue.c_str()), consumerTag, bNoLocal, bNoAck, bExclusive, args);
 }
 
 void AMQP::Channel::basicCancel(const std::string& consumerTag)
 {
-    auto r = amqp_basic_cancel(_tcpConn.connnection(), this->_channelId,
-                               amqp_cstring_bytes(consumerTag.c_str()));
+    auto r = amqp_basic_cancel(_tcpConn.connnection(), this->_channelId, amqp_cstring_bytes(consumerTag.c_str()));
     if (!r)
     {
         auto res = amqp_get_rpc_reply(_tcpConn.connnection());
@@ -63,15 +63,11 @@ AMQP::Envelope AMQP::Channel::getMessage(const timeval& timeOut)
 
         if (frame.payload.method.id != AMQP_BASIC_DELIVER_METHOD) continue;
 
-        amqp_basic_deliver_t* deliver_method =
-            reinterpret_cast<amqp_basic_deliver_t*>(frame.payload.method.decoded);
+        amqp_basic_deliver_t* deliver_method = reinterpret_cast<amqp_basic_deliver_t*>(frame.payload.method.decoded);
 
-        en.exchange =
-            std::string((char*)deliver_method->exchange.bytes, deliver_method->exchange.len);
-        en.exchange =
-            std::string((char*)deliver_method->routing_key.bytes, deliver_method->routing_key.len);
-        en.exchange = std::string((char*)deliver_method->consumer_tag.bytes,
-                                  deliver_method->consumer_tag.len);
+        en.exchange = std::string((char*)deliver_method->exchange.bytes, deliver_method->exchange.len);
+        en.exchange = std::string((char*)deliver_method->routing_key.bytes, deliver_method->routing_key.len);
+        en.exchange = std::string((char*)deliver_method->consumer_tag.bytes, deliver_method->consumer_tag.len);
         en.deliveryTag = deliver_method->delivery_tag;
         en.redelivered = (deliver_method->redelivered == 0 ? false : true);
         en.channelNum = frame.channel;
@@ -101,8 +97,7 @@ AMQP::Envelope AMQP::Channel::getMessage(const timeval& timeOut)
                     throw AMQP::Exception("Received frame type is not body frame");
                 }
 
-                memcpy(pBuffer + body_received, frame.payload.body_fragment.bytes,
-                       frame.payload.body_fragment.len);
+                memcpy(pBuffer + body_received, frame.payload.body_fragment.bytes, frame.payload.body_fragment.len);
                 body_received += frame.payload.body_fragment.len;
             }
 
@@ -186,8 +181,7 @@ int AMQP::Channel::basicReject(std::uint64_t deliveryTag, bool requeue)
 }
 
 void AMQP::Channel::basicPublish(const std::string& strExchange, const std::string& strRoutingKey,
-                                 const AMQP::Message& message,
-                                 const MessageProps* pProps /*= nullptr*/)
+                                 const AMQP::Message& message, const MessageProps* pProps /*= nullptr*/)
 {
     amqp_connection_state_t conn = _tcpConn.connnection();
     amqp_basic_properties_t amqpProps;
@@ -196,8 +190,7 @@ void AMQP::Channel::basicPublish(const std::string& strExchange, const std::stri
     if (pProps) dumpBasicProps(pProps, amqpProps);
 
     int res = amqp_basic_publish(conn, _channelId, amqp_cstring_bytes(strExchange.c_str()),
-                                 amqp_cstring_bytes(strRoutingKey.c_str()), 0, 0, &amqpProps,
-                                 (amqp_bytes_t)message);
+                                 amqp_cstring_bytes(strRoutingKey.c_str()), 0, 0, &amqpProps, (amqp_bytes_t)message);
 
     if (0 > res)
     {
@@ -210,15 +203,13 @@ void AMQP::Channel::basicPublish(const std::string& strExchange, const std::stri
 }
 
 void AMQP::Channel::basicPublish(const std::string& strExchange, const std::string& strRoutingKey,
-                                 const std::string& strMessage,
-                                 const MessageProps* pProps /*= nullptr*/)
+                                 const std::string& strMessage, const MessageProps* pProps /*= nullptr*/)
 {
     basicPublish(strExchange, strRoutingKey, amqp_cstring_bytes(strMessage.c_str()), pProps);
 }
 
-std::string AMQP::Channel::declareExchange(std::string exchangeName, std::string type, bool passive,
-                                           bool durable, bool autoDel, bool internal, bool noWait,
-                                           const AMQP::Table* args)
+std::string AMQP::Channel::declareExchange(std::string exchangeName, std::string type, bool passive, bool durable,
+                                           bool autoDel, bool internal, bool noWait, const AMQP::Table* args)
 {
     amqp_bytes_t exchange;
 
@@ -234,9 +225,9 @@ std::string AMQP::Channel::declareExchange(std::string exchangeName, std::string
         table.entries = (amqp_table_entry_t_*)args->getEntries();
     }
 
-    amqp_exchange_declare_ok_t* r = amqp_exchange_declare(
-        _tcpConn.connnection(), _channelId, exchange, amqp_cstring_bytes(type.c_str()), passive,
-        durable, autoDel, internal, table);
+    amqp_exchange_declare_ok_t* r =
+        amqp_exchange_declare(_tcpConn.connnection(), _channelId, exchange, amqp_cstring_bytes(type.c_str()), passive,
+                              durable, autoDel, internal, table);
 
     if (!r)
     {
@@ -247,8 +238,8 @@ std::string AMQP::Channel::declareExchange(std::string exchangeName, std::string
     return exchangeName;
 }
 
-void AMQP::Channel::bindExchange(std::string destination, std::string source,
-                                 std::string routingKey, const AMQP::Table* args)
+void AMQP::Channel::bindExchange(std::string destination, std::string source, std::string routingKey,
+                                 const AMQP::Table* args)
 {
     amqp_table_t table = amqp_empty_table;
     if (args && args->getEntriesSize() > 0)
@@ -257,9 +248,9 @@ void AMQP::Channel::bindExchange(std::string destination, std::string source,
         table.entries = (amqp_table_entry_t_*)args->getEntries();
     }
 
-    amqp_exchange_bind_ok_t* r = amqp_exchange_bind(
-        _tcpConn.connnection(), _channelId, amqp_cstring_bytes(destination.c_str()),
-        amqp_cstring_bytes(source.c_str()), amqp_cstring_bytes(routingKey.c_str()), table);
+    amqp_exchange_bind_ok_t* r =
+        amqp_exchange_bind(_tcpConn.connnection(), _channelId, amqp_cstring_bytes(destination.c_str()),
+                           amqp_cstring_bytes(source.c_str()), amqp_cstring_bytes(routingKey.c_str()), table);
 
     if (!r)
     {
@@ -284,8 +275,8 @@ void AMQP::Channel::deleteExchange(std::string exchange, bool ifUnUsed, bool noW
     }
 }
 
-void AMQP::Channel::unbindExchange(std::string destination, std::string source,
-                                   std::string routingKey, const AMQP::Table* args)
+void AMQP::Channel::unbindExchange(std::string destination, std::string source, std::string routingKey,
+                                   const AMQP::Table* args)
 {
     amqp_table_t table = amqp_empty_table;
     if (args && args->getEntriesSize() > 0)
@@ -312,8 +303,7 @@ void AMQP::Channel::unbindExchange(std::string destination, std::string source,
 
 void AMQP::Channel::deleteQueue(const std::string& queue, bool ifUnused, bool ifEmpty)
 {
-    if (!amqp_queue_delete(_tcpConn.connnection(), _channelId, amqp_cstring_bytes(queue.c_str()),
-                           ifUnused, ifEmpty))
+    if (!amqp_queue_delete(_tcpConn.connnection(), _channelId, amqp_cstring_bytes(queue.c_str()), ifUnused, ifEmpty))
     {
         auto res = amqp_get_rpc_reply(_tcpConn.connnection());
         throw AMQP::Exception("Delete the queue failed", res);
@@ -329,9 +319,8 @@ void AMQP::Channel::purgeQueue(const std::string& queue)
     }
 }
 
-std::string AMQP::Channel::declareQueue(const std::string& queue, bool passive /*= false*/,
-                                        bool durable /*= false*/, bool exclusive /*= false*/,
-                                        bool autoDel /*= false*/,
+std::string AMQP::Channel::declareQueue(const std::string& queue, bool passive /*= false*/, bool durable /*= false*/,
+                                        bool exclusive /*= false*/, bool autoDel /*= false*/,
                                         const AMQP::Table* args /*= AMQP::Table()*/)
 {
     amqp_bytes_t queue_;
@@ -348,8 +337,8 @@ std::string AMQP::Channel::declareQueue(const std::string& queue, bool passive /
         table.entries = (amqp_table_entry_t_*)args->getEntries();
     }
 
-    amqp_queue_declare_ok_t* r = amqp_queue_declare(_tcpConn.connnection(), _channelId, queue_,
-                                                    passive, durable, exclusive, autoDel, table);
+    amqp_queue_declare_ok_t* r =
+        amqp_queue_declare(_tcpConn.connnection(), _channelId, queue_, passive, durable, exclusive, autoDel, table);
 
     if (!r)
     {
@@ -361,13 +350,11 @@ std::string AMQP::Channel::declareQueue(const std::string& queue, bool passive /
     return strQueue;
 }
 
-void AMQP::Channel::bindQueue(const std::string& exchange, const std::string& queue,
-                              const std::string& bindingkey)
+void AMQP::Channel::bindQueue(const std::string& exchange, const std::string& queue, const std::string& bindingkey)
 {
     amqp_queue_bind_ok_t* r =
         amqp_queue_bind(_tcpConn.connnection(), _channelId, amqp_cstring_bytes(queue.c_str()),
-                        amqp_cstring_bytes(exchange.c_str()),
-                        amqp_cstring_bytes(bindingkey.c_str()), amqp_empty_table);
+                        amqp_cstring_bytes(exchange.c_str()), amqp_cstring_bytes(bindingkey.c_str()), amqp_empty_table);
     if (!r)
     {
         auto res = amqp_get_rpc_reply(_tcpConn.connnection());
@@ -375,14 +362,12 @@ void AMQP::Channel::bindQueue(const std::string& exchange, const std::string& qu
     }
 }
 
-void AMQP::Channel::unbindQueue(const std::string& exchange, const std::string& queue,
-                                const std::string& bindingkey)
+void AMQP::Channel::unbindQueue(const std::string& exchange, const std::string& queue, const std::string& bindingkey)
 {
 
-    amqp_queue_unbind_ok_t* r =
-        amqp_queue_unbind(_tcpConn.connnection(), _channelId, amqp_cstring_bytes(queue.c_str()),
-                          amqp_cstring_bytes(exchange.c_str()),
-                          amqp_cstring_bytes(bindingkey.c_str()), amqp_empty_table);
+    amqp_queue_unbind_ok_t* r = amqp_queue_unbind(_tcpConn.connnection(), _channelId, amqp_cstring_bytes(queue.c_str()),
+                                                  amqp_cstring_bytes(exchange.c_str()),
+                                                  amqp_cstring_bytes(bindingkey.c_str()), amqp_empty_table);
     if (!r)
     {
         auto res = amqp_get_rpc_reply(_tcpConn.connnection());
@@ -414,9 +399,8 @@ AMQP::Channel::~Channel()
     if (isOpened()) close();
 }
 
-std::string AMQP::Channel::basicConsume(amqp_bytes_t queue, const std::string& consumerTag,
-                                        bool bNoLocal /*= false*/, bool bNoAck /*= false*/,
-                                        bool bExclusive /*= false*/, const Table* args)
+std::string AMQP::Channel::basicConsume(amqp_bytes_t queue, const std::string& consumerTag, bool bNoLocal /*= false*/,
+                                        bool bNoAck /*= false*/, bool bExclusive /*= false*/, const Table* args)
 {
     amqp_connection_state_t conn = _tcpConn.connnection();
     amqp_table_t table = amqp_empty_table;
@@ -474,8 +458,7 @@ void AMQP::Channel::dumpBasicProps(const MessageProps* pProps, amqp_basic_proper
 
     if (pProps->deliveryMode > 0) pAmqpProps.delivery_mode = pProps->deliveryMode;
 
-    if (!pProps->contentType.empty())
-        pAmqpProps.content_type = amqp_cstring_bytes(pProps->contentType.c_str());
+    if (!pProps->contentType.empty()) pAmqpProps.content_type = amqp_cstring_bytes(pProps->contentType.c_str());
 }
 
 void AMQP::Channel::initBasicProps(amqp_basic_properties_t& pAmqpProps)
@@ -491,7 +474,4 @@ void AMQP::Channel::updateChannelState(ChannelState state)
     _tcpConn._channelsState.insert_or_assign(this->_channelId, state);
 }
 
-AMQP::Channel::Channel(TCPConnection& conn, uint16_t id) : _tcpConn(conn), _channelId(id)
-{
-    open(_channelId);
-}
+AMQP::Channel::Channel(Connection& conn, uint16_t id) : _tcpConn(conn), _channelId(id) { open(_channelId); }
