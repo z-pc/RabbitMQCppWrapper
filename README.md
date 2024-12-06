@@ -18,7 +18,7 @@ cmake..
 Very easy, some basic function
 Create connection
 ```
-auto cnn = AMQP::TCPConnection::createConnection("localhost", 5672);
+auto cnn = AMQP::createConnection("localhost", 5672);
 ```
 Handle and create channel
 ```
