@@ -23,6 +23,7 @@ ex_consumer
 ex_publisher
 ex_queue
 ex_exchange
+ex_ssl_connection
 )
 
 foreach(example IN LISTS WRAPPER_EXAMPLES)
