@@ -4,7 +4,7 @@ IndentWidth: 4
 BreakBeforeBraces: Allman
 AllowShortIfStatementsOnASingleLine: true
 IndentCaseLabels: false
-ColumnLimit: 0
+ColumnLimit: 120
 AccessModifierOffset: -4
 AllowShortFunctionsOnASingleLine: true
 AllowShortLambdasOnASingleLine: true
@@ -14,6 +14,6 @@ AlignTrailingComments: true
 DerivePointerAlignment: false
 PointerAlignment: Left
 
-AlwaysBreakTemplateDeclarations: false
+AlwaysBreakTemplateDeclarations: Yes
 
 AlignConsecutiveMacros: AcrossComments
